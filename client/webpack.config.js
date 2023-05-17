@@ -1,64 +1,77 @@
+const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const WebpackPwaManifest = require('webpack-pwa-manifest');
-const path = require('path');
 const { InjectManifest } = require('workbox-webpack-plugin');
 
-const workboxPlugin = new InjectManifest({
-  swSrc: './src-sw.js',
-  swDest: 'src-sw.js'
-});
-
-const manifestPlugin = new WebpackPwaManifest({
-  name: 'Just another text editor',
-  short_name: 'JATE',
-  description: 'Create notes online or not',
-  background_color: '',
-  theme_color: '',
-  icons: [
+const webpackConfig = () => {
+  const mode = 'development';
+  const entry = {
+    main: './src/js/index.js',
+    install: './src/js/install.js'
+  };
+  const output = {
+    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+    assetModuleFilename: "[name][ext]"
+  };
+  const plugins = [
+    new HtmlWebpackPlugin({
+      template: './index.html',
+      title: 'Jate',
+      favicon: './favicon.ico',
+      logo: './src/images/logo.png',
+    }),
+    new WebpackPwaManifest({
+      name: 'Jate',
+      short_name: 'Jate',
+      start_url: './',
+      publicPath: './',
+      background_color: '#225ca3',
+      theme_color: '#225ca3',
+      icons: [
+        {
+          src: path.resolve('src/images/logo.png'),
+          sizes: [96, 128, 192, 256, 384, 512],
+          destination: path.join('assets', 'icons'),
+        },
+      ],
+    }),
+    new InjectManifest({
+      swSrc: './src-sw.js',
+    }),
+  ];
+  const moduleRules = [
     {
-      src: path.resolve('src/images/logo.png'),
-      sizes: [96, 128, 192, 256, 384, 512],
-      destination: path.join('assets', 'icons'),
+      test: /\.css$/,
+      use: ['style-loader', 'css-loader'],
     },
-  ],
-});
-
-const cssLoader = {
-  test: /\.css$/i,
-  use: ['style-loader', 'css-loader'],
-};
-
-const babelLoader = {
-  test: /\.js$/,
-  exclude: /node_modules/,
-  use: {
-    loader: 'babel-loader',
-    options: {
-      presets: ['@babel/preset-env'],
+    {
+      test: /\.js$/,
+      exclude: /node_modules/,
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env'],
+        },
+      },
     },
-  },
-};
+    {
+      test: /\.(png|jpe?g|gif)$/i,
+      loader: 'file-loader',
+      options: {
+        name: '[name].[contenthash].[ext]',
+        outputPath: 'images',
+      },
+    },
+  ];
 
-const HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
-  template: './index.html',
-  filename: 'index.html'
-});
-
-module.exports = () => {
   return {
-    mode: 'development',
-    entry: {
-      main: './src/js/index.js',
-      install: './src/js/install.js'
-    },
-    output: {
-      filename: '[name].bundle.js',
-      path: path.resolve(__dirname, 'dist'),
-    },
-    plugins: [HtmlWebpackPluginConfig, manifestPlugin, workboxPlugin],
-
-    module: {
-      rules: [cssLoader, babelLoader],
-    },
+    mode,
+    entry,
+    output,
+    plugins,
+    module: { rules: moduleRules },
   };
 };
+
+module.exports = webpackConfig;
